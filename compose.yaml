@@ -1,0 +1,10 @@
+services:
+  database:
+    image:  postgres:alpine3.23
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: cryptosentry
+    ports:
+      - "5432:5432"        
+
+

@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  created_at    DateTime     @default(now())
+  watchlists    Watchlist[]
+}
+
+model Watchlist {
+  id        String    @id @default(cuid())
+  user_id   String
+  asset_id  String
+  asset_name String
+  added_at  DateTime  @default(now())
+  user      User      @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, asset_id])
+}
+
+
+model CryptoAlert {
+  id              String    @id @default(cuid())
+  asset_id        String
+  asset_name      String
+  price_at_drop   Float
+  drop_percentage Float
+  detected_at     DateTime  @default(now())
+}
