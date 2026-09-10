@@ -2,9 +2,17 @@ import Sidebar from "../component/Sidebar";
 import { prisma } from "../lib/prisma";
 
 export default async function History() {
-  const records = await prisma.cryptoAlert.findMany({
-    orderBy: { detected_at: 'desc' }
-  });
+  let databaseError = "";
+  let records: any[] = [];
+
+  try {
+    records = await prisma.cryptoAlert.findMany({
+      orderBy: { detected_at: 'desc' }
+    });
+  } catch (error) {
+    console.error("Could not load alert history:", error);
+    databaseError = "The database is unavailable right now, so alert history could not be loaded.";
+  }
 
   return (
     <div className="flex min-h-screen bg-[#05070a]">
@@ -30,12 +38,14 @@ export default async function History() {
             <div className="bg-[#070b14] border border-slate-800/60 p-5 rounded-2xl flex items-center gap-8 shadow-xl">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Total Detections</p>
-                <p className="text-2xl font-mono font-black text-white">{records.length}</p>
+                <p className="text-2xl font-mono font-black text-white">{databaseError ? "—" : records.length}</p>
               </div>
               <div className="w-[1px] h-10 bg-slate-800" />
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Database Health</p>
-                <p className="text-xs font-mono text-emerald-500 font-bold uppercase">Optimal</p>
+                <p className={`text-xs font-mono font-bold uppercase ${databaseError ? "text-amber-500" : "text-emerald-500"}`}>
+                  {databaseError ? "Unavailable" : "Optimal"}
+                </p>
               </div>
             </div>
           </div>
@@ -51,7 +61,11 @@ export default async function History() {
             </div>
 
             <div className="divide-y divide-slate-800/40">
-              {records.length > 0 ? (
+              {databaseError ? (
+                <div className="text-center py-32 px-6">
+                  <p className="text-amber-500 font-mono text-sm">{databaseError}</p>
+                </div>
+              ) : records.length > 0 ? (
                 records.map((item) => (
                   <div 
                     key={item.id} 

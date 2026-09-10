@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Dashboard from "./dashboard/page";
-import PriceCard from "./pricecard/page";
+
+import DashboardShell from "./component/DashboardShell";
+import PriceCard from "./component/PriceCard";
 import { useSession } from "next-auth/react";
 import { getUserWatchlistIds } from "./actions/watchlist";
 
 export default function Home() {
 
-  const [assets, setAssets] = useState([]);
+  const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastTime, setLastTime] = useState("");
   const [now, setNow] = useState(Date.now());
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
+  const [feedError, setFeedError] = useState("");
 
   const { data, status } = useSession();
   const userEmail = data?.user?.email ?? null;
@@ -52,7 +54,7 @@ export default function Home() {
 
   const getSentryData = async () => {
     try {
-      const response = await fetch("http://localhost:3001/price", {
+      const response = await fetch('http://localhost:3001/price', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,35 +76,54 @@ export default function Home() {
         setLastTime(result["lastUpdated"]);
         localStorage.setItem("cached_assets", JSON.stringify(result.data));
         localStorage.setItem("cached_time", result["lastUpdated"]);
+        setFeedError("");
         setLoading(false);
+      } else {
+        throw new Error("Price feed did not return any assets");
       }
     } catch (error) {
       // Fallback: show cached data rather than a blank screen.
       setLoading(false);
       const cache_asset: any = localStorage.getItem("cached_assets");
       const cache_lasttime: any = localStorage.getItem("cached_time");
-      const cache_array = JSON.parse(cache_asset);
-      setAssets(cache_array);
-      setLastTime(cache_lasttime);
+      const cache_array = cache_asset ? JSON.parse(cache_asset) : [];
+      setAssets(Array.isArray(cache_array) ? cache_array : []);
+      setLastTime(cache_lasttime || "");
+      setFeedError(
+        cache_asset
+          ? "Live price server is unavailable. Showing cached market data."
+          : "Live price server is unavailable and no cached market data was found."
+      );
     }
   };
 
   return (
-    <Dashboard isOnline={isSystemOnline}>
+    <DashboardShell>
       {loading ? (
         <div className="text-white p-30"> 🛰️ Connecting to Sentry...</div>
+      ) : feedError && assets.length === 0 ? (
+        <div className="text-center py-32 px-6">
+          <p className="text-amber-500 font-mono text-sm">{feedError}</p>
+        </div>
       ) : (
-        assets.map((coin: any, index) => (
-          <PriceCard
-            key={index}
-            data={coin}
-            timeStamp={lastTime}
-            now={now}
-            userEmail={userEmail}
-            initialWatchlisted={watchlistIds.includes(coin.asset_id)}
-          />
-        ))
+        <>
+          {feedError && (
+            <div className="px-10 py-4 text-amber-500 text-sm font-mono border-b border-white/5">
+              {feedError}
+            </div>
+          )}
+          {assets.map((coin: any, index) => (
+            <PriceCard
+              key={index}
+              data={coin}
+              timeStamp={lastTime}
+              now={now}
+              userEmail={userEmail}
+              initialWatchlisted={watchlistIds.includes(coin.asset_id)}
+            />
+          ))}
+        </>
       )}
-    </Dashboard>
+    </DashboardShell>
   );
 }

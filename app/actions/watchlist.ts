@@ -11,12 +11,17 @@ async function resolveUserId(): Promise<string | null> {
   const email = session?.user?.email;
   if (!email) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase().trim() },
-    select: { id: true },
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      select: { id: true },
+    });
 
-  return user?.id ?? null;
+    return user?.id ?? null;
+  } catch (error) {
+    console.error("Could not resolve user:", error);
+    return null;
+  }
 }
 
 /**
@@ -35,7 +40,6 @@ export async function toggleWatchlist(
     return { success: false, watchlisted: false, message: "Not authenticated." };
   }
 
-  console.log(userId)
   assetId = assetId.toString()
   try {
     const existing = await prisma.watchlist.findUnique({
@@ -67,10 +71,15 @@ export async function getUserWatchlistIds(): Promise<string[]> {
   const userId = await resolveUserId();
   if (!userId) return [];
 
-  const records = await prisma.watchlist.findMany({
-    where: { user_id: userId },
-    select: { asset_id: true },
-  });
+  try {
+    const records = await prisma.watchlist.findMany({
+      where: { user_id: userId },
+      select: { asset_id: true },
+    });
 
-  return records.map((r) => r.asset_id);
+    return records.map((r:any) => r.asset_id);
+  } catch (error) {
+    console.error("Could not load user watchlist ids:", error);
+    return [];
+  }
 }

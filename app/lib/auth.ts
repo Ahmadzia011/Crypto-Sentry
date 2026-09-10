@@ -41,17 +41,22 @@ export const authOptions: NextAuthOptions = {
         return true;
       }
 
-      const normalizedEmail = user.email.toLowerCase().trim();
-      const displayName = user.name?.trim() || null;
+      try {
+        const normalizedEmail = user.email.toLowerCase().trim();
+        const displayName = user.name?.trim() || null;
 
-      await prisma.user.upsert({ //it will create a new record if not present otherwise update the existing
-        where: { email: normalizedEmail },
-        update: displayName ? { name: displayName } : {},
-        create: {
-          email: normalizedEmail,
-          name: displayName,
-        },
-      });
+        await prisma.user.upsert({ //it will create a new record if not present otherwise update the existing
+          where: { email: normalizedEmail },
+          update: displayName ? { name: displayName } : {},
+          create: {
+            email: normalizedEmail,
+            name: displayName,
+          },
+        });
+      } catch (error) {
+        console.error("Could not sync signed-in user:", error);
+        return "/login?error=DatabaseUnavailable";
+      }
 
       return true;
     },
