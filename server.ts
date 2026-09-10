@@ -10,7 +10,8 @@ app.use(cors());
 app.use(express.json());
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const PORT = 3001;
+const PORT = Number(process.env.PORT || 3001);
+const HOST = "0.0.0.0";
 
 
 
@@ -33,6 +34,14 @@ app.post("/price", (req,res)=> {
 res.json({priceCache}
 )
 })
+
+app.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    hasPriceCache: Boolean(priceCache),
+    lastUpdated: priceCache?.lastUpdated ?? null,
+  });
+});
 
 
 // --- 1. Helpers ---
@@ -164,6 +173,6 @@ main();
 setInterval(main, 30000); // 30-second interval
 
 
-app.listen(PORT, () => {
-  console.log(`🚀 Sentry Worker active on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Sentry Worker active on http://${HOST}:${PORT}`);
 });

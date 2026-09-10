@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "worker": "ts-node --project tsconfig.server.json server.ts"
+    "worker": "ts-node --project tsconfig.server.json server.ts",
+    "render-build": "prisma generate",
+    "render-start": "ts-node --project tsconfig.server.json server.ts"
   },
   "dependencies": {
     "@langchain/google-genai": "^2.1.26",
